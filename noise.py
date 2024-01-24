@@ -14,7 +14,8 @@ DT = 1.0 / SAMPLING_RATE
 SAMPLES = SAMPLING_RATE * 1
 
 
-def gen_noise(response: np.array) -> np.array:
+def gen_noise(response: np.array, time_length: int = 1) -> np.array:
+    SAMPLES = SAMPLING_RATE * time_length
     noise = np.zeros(SAMPLES, dtype=np.float32)  # white noise
 
     time_vals = np.array(range(SAMPLES)) / SAMPLING_RATE

@@ -23,8 +23,14 @@ def play_sound():
     # db = 20log_10(amplitude)
     sound = noise.gen_noise(10 ** (DB / 20))
     sound = (sound * (2**15)).astype("int16")
-    scipy.io.wavfile.write('noise.wav', noise.SAMPLING_RATE, sound)
+    scipy.io.wavfile.write("noise.wav", noise.SAMPLING_RATE, sound)
     sounddevice.play(sound, noise.SAMPLING_RATE)
+
+
+def save_sound(time_len: int):
+    sound = noise.gen_noise(10 ** (DB / 20), time_len)
+    sound = (sound * (2**15)).astype("int16")
+    scipy.io.wavfile.write("noise.wav", noise.SAMPLING_RATE, sound)
 
 
 class AmpPlot(tk.Canvas):
@@ -69,7 +75,7 @@ class AmpPlot(tk.Canvas):
                 text=f"{noise.freqs_hz[int(x_pos)]:.2G}Hz",
             )
 
-    def play_sound(self, event=None):
+    def play_sound(self):
         """Play sample of generated sound"""
         global DB
         DB = -(
@@ -77,6 +83,9 @@ class AmpPlot(tk.Canvas):
         )  # Translate height to db
         sound_thread = threading.Thread(target=play_sound)
         sound_thread.start()
+
+    def save_sound(self):
+        save_sound(int(self.time_entry.get()))
 
     def add_line(self, event):
         """Draw heights and change heights"""
@@ -133,6 +142,13 @@ class AmpPlot(tk.Canvas):
         self.draw_ui()
 
 
+def validate_uint(user_input: str):
+    if str.isdigit(user_input) or user_input == "":
+        return True
+    else:
+        return False
+
+
 def create_window():
     root = tk.Tk()
     root.title("MellowDy")
@@ -145,16 +161,25 @@ def create_window():
     sketch.draw_ui()
 
     buttons_frame = tk.Frame(root)
-    play = ttk.Button(buttons_frame, text="Play Sound", command=sketch.play_sound)
+    preview = ttk.Button(buttons_frame, text="Preview Sound", command=sketch.play_sound)
     save = ttk.Button(buttons_frame, text="Save Response", command=sketch.save_response)
     load = ttk.Button(buttons_frame, text="Load Response", command=sketch.load_response)
     redraw = ttk.Button(buttons_frame, text="Redraw UI", command=sketch.draw_ui)
 
+    generate = ttk.Button(
+        buttons_frame, text="Generate Long Audio", command=sketch.save_sound
+    )
+    length = ttk.Entry(buttons_frame, validate="all", validatecommand=validate_uint)
+    sketch.time_entry = length
+
     buttons_frame.grid(column=0, row=1)
-    play.grid(column=0, row=0)
+    preview.grid(column=0, row=0)
     save.grid(column=1, row=0)
     load.grid(column=2, row=0)
     redraw.grid(column=3, row=0)
+
+    generate.grid(column=1, row=1)
+    length.grid(column=2, row=1)
 
     root.mainloop()
 
