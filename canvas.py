@@ -6,10 +6,13 @@ import tkinter.ttk as ttk
 import tkinter.filedialog as fd
 
 import sounddevice
+import scipy.io.wavfile
 import numpy as np
-import noise
 
 from dotmap import DotMap
+
+import noise
+
 
 CANVAS_HEIGHT = 500
 HEIGHTS = np.zeros((noise.NUM_FREQS)) + CANVAS_HEIGHT
@@ -20,10 +23,8 @@ def play_sound():
     # db = 20log_10(amplitude)
     sound = noise.gen_noise(10 ** (DB / 20))
     sound = (sound * (2**15)).astype("int16")
-    try:
-        sounddevice.play(sound, noise.SAMPLING_RATE)
-    except:
-        pass
+    scipy.io.wavfile.write('noise.wav', noise.SAMPLING_RATE, sound)
+    sounddevice.play(sound, noise.SAMPLING_RATE)
 
 
 class AmpPlot(tk.Canvas):
@@ -35,9 +36,9 @@ class AmpPlot(tk.Canvas):
         self.width = kwargs.get("width", noise.NUM_FREQS)
         self.height = kwargs.get("height", 500)
         self.bind("<B1-Motion>", self.add_line)
-        self.draw_UI()
+        self.draw_ui()
 
-    def draw_UI(self):
+    def draw_ui(self):
         """Draw the UI e.g. dB lines, freq lines"""
         self.left_ax = 20
         self.create_line(self.left_ax, 0, self.left_ax, self.height, fill="red")
@@ -101,7 +102,7 @@ class AmpPlot(tk.Canvas):
         self.create_line(delete_line, fill="white")
         self.create_line(new_line)
 
-    def save_data(self):
+    def save_response(self):
         """Save with a dialog"""
         f = fd.asksaveasfilename(
             confirmoverwrite=False,
@@ -113,7 +114,7 @@ class AmpPlot(tk.Canvas):
         with open(f, "wb") as file_handle:
             pickle.dump(HEIGHTS, file_handle)
 
-    def load_data(self):
+    def load_response(self):
         """Load with a dialog"""
         global HEIGHTS
         f = fd.askopenfilename(
@@ -129,7 +130,7 @@ class AmpPlot(tk.Canvas):
         )
         # Redraw heights
         [self.add_line(DotMap(x=i, y=height)) for i, height in enumerate(HEIGHTS)]
-        self.draw_UI()
+        self.draw_ui()
 
 
 def create_window():
@@ -141,13 +142,14 @@ def create_window():
 
     sketch = AmpPlot(root, width=noise.NUM_FREQS, height=CANVAS_HEIGHT, bg="white")
     sketch.grid(column=0, row=0)
-    sketch.draw_UI()
+    sketch.draw_ui()
 
     buttons_frame = tk.Frame(root)
     play = ttk.Button(buttons_frame, text="Play Sound", command=sketch.play_sound)
-    save = ttk.Button(buttons_frame, text="Save", command=sketch.save_data)
-    load = ttk.Button(buttons_frame, text="Load", command=sketch.load_data)
-    redraw = ttk.Button(buttons_frame, text="Redraw UI", command=sketch.draw_UI)
+    save = ttk.Button(buttons_frame, text="Save Response", command=sketch.save_response)
+    load = ttk.Button(buttons_frame, text="Load Response", command=sketch.load_response)
+    redraw = ttk.Button(buttons_frame, text="Redraw UI", command=sketch.draw_ui)
+
     buttons_frame.grid(column=0, row=1)
     play.grid(column=0, row=0)
     save.grid(column=1, row=0)
